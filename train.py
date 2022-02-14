@@ -42,9 +42,12 @@ def main(args):
         algo=algo,
         log_dir=log_dir,
         seed=args.seed,
-        num_steps=args.num_steps,
+        num_steps=2 * 10 ** 6,
+        initial_collection_steps=10 ** 4,
+        initial_learning_steps=10 ** 5,
     )
     trainer.train()
+    print('Finished')
 
 
 if __name__ == "__main__":
