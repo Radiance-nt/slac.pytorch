@@ -2,11 +2,11 @@ import argparse
 import os
 from datetime import datetime
 
-import torch
-
-from slac.algo import SlacAlgorithm
 from slac.env import make_dmc
 from slac.trainer import Trainer
+from slac.algo import SlacAlgorithm
+
+import torch
 
 
 def main(args):
@@ -24,7 +24,7 @@ def main(args):
     )
 
     log_dir = os.path.join(
-        "logs",
+        "log",
         f"{args.domain_name}-{args.task_name}",
         f'slac-seed{args.seed}-{datetime.now().strftime("%Y%m%d-%H%M")}',
     )
@@ -53,9 +53,12 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_steps", type=int, default=2 * 10 ** 6)
-    parser.add_argument("--domain_name", type=str, default="cheetah")
-    parser.add_argument("--task_name", type=str, default="run")
+    parser.add_argument("--domain_name", type=str, default="ML1")
+    parser.add_argument("--task_name", type=str, default="reach-v2")
     parser.add_argument("--action_repeat", type=int, default=4)
+    parser.add_argument("--num_steps", type=int, default=2 * 10 ** 6)
+    parser.add_argument("--initial_collection_steps", type=int, default= 10 ** 4,)
+    parser.add_argument("--initial_learning_steps", type=int, default=10 ** 5)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--cuda", action="store_true")
     args = parser.parse_args()

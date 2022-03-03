@@ -1,6 +1,24 @@
 # Stochastic Latent Actor-Critic in PyTorch
 A PyTorch implementation of Stochastic Latent Actor-Critic[[1]](#references) for [DeepMind Control Suite](https://github.com/deepmind/dm_control). I tried to make it easy for readers to understand the algorithm. Please let me know if you have any questions.
 
+
+## Task:
+
+    'reach-v1': SawyerReachPushPickPlaceEnv,
+    'push-v1': SawyerReachPushPickPlaceEnv,
+    'pick-place-v1': SawyerReachPushPickPlaceEnv,
+    'door-v1': SawyerDoorEnv,
+    'drawer-open-v1': SawyerDrawerOpenEnv,
+    'drawer-close-v1': SawyerDrawerCloseEnv,
+    'button-press-topdown-v1': SawyerButtonPressTopdownEnv,
+    'ped-insert-side-v1': SawyerPegInsertionSideEnv,
+    'window-open-v1': SawyerWindowOpenEnv,
+    'window-close-v1': SawyerWindowCloseEnv,
+
+```
+python train.py --domain_name ML1 --task_name reach-v1 --action_repeat 4 --seed 0 --cuda
+```
+
 **UPDATE**
 - 2021.10.6
     - Refactor codes to be compatible with original impl.
