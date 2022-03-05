@@ -7,6 +7,7 @@ import cv2
 import numpy
 from gym.spaces import Box
 from metaworld.benchmarks import ML1
+import mujoco_py
 
 
 gym.logger.set_level(40)
@@ -35,7 +36,7 @@ class VisualizeWarpper(gym.Wrapper):
                  height=84,
                  width=84,
                  camera_id=0, ):
-        # env.active_env.viewer = mujoco_py.MjViewer(env.active_env.sim)
+        env.active_env.viewer = mujoco_py.MjViewer(env.active_env.sim)
         super(VisualizeWarpper, self).__init__(env)
         low = numpy.zeros((3, image_size, image_size), numpy.uint8)
         high = numpy.ones((3, image_size, image_size), numpy.uint8) * 255
