@@ -131,6 +131,7 @@ class Trainer:
 
     def evaluate(self, step_env):
         mean_return = 0.0
+        mean_success = 0.0
 
         for i in range(self.num_eval_episodes):
             state = self.env_test.reset()
@@ -145,14 +146,17 @@ class Trainer:
                 episode_return += reward
 
             mean_return += episode_return / self.num_eval_episodes
+            mean_success += _['success'] / self.num_eval_episodes
 
         # Log to CSV.
         self.log["step"].append(step_env)
         self.log["return"].append(mean_return)
+        self.log["success"].append(mean_success)
         pd.DataFrame(self.log).to_csv(self.csv_path, index=False)
 
         # Log to TensorBoard.
         self.writer.add_scalar("return/test", mean_return, step_env)
+        self.writer.add_scalar("success/test", mean_success, step_env)
         print(f"Steps: {step_env:<6}   " f"Return: {mean_return:<5.1f}   " f"Time: {self.time}")
 
     @property
