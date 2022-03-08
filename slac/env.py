@@ -7,6 +7,7 @@ import cv2
 import numpy
 from gym.spaces import Box
 from metaworld.benchmarks import ML1
+import mujoco_py
 
 
 gym.logger.set_level(40)
@@ -35,6 +36,7 @@ class VisualizeWarpper(gym.Wrapper):
                  height=84,
                  width=84,
                  camera_id=0, ):
+        self.offscreen = mujoco_py.MjRenderContextOffscreen(env.active_env.sim, offscreen=True, opengl_backend='glfw')
         super(VisualizeWarpper, self).__init__(env)
         low = numpy.zeros((3, image_size, image_size), numpy.uint8)
         high = numpy.ones((3, image_size, image_size), numpy.uint8) * 255
@@ -46,17 +48,22 @@ class VisualizeWarpper(gym.Wrapper):
 
     def reset(self, **kwargs):
         self.env.reset(**kwargs)
-        image = self.env.get_image()
+        image = self.get_image()
         image = cv2.resize(image, (self.image_size, self.image_size))
         image = image.transpose(2, 0, 1)
         return image
 
     def step(self, action):
         result = self.env.step(action)
-        image = self.env.get_image()
+        image = self.get_image()
         image = cv2.resize(image, (self.image_size, self.image_size))
         image = image.transpose(2, 0, 1)
         return (image,) + result[1:]
+
+    def get_image(self):
+        self.offscreen.render(self.image_size , self.image_size , camera_id=-1)
+        image = self.offscreen.read_pixels(self.image_size , self.image_size , depth=True)
+        return image[0]
 
     def __getattr__(self, name):
         return getattr(self.env, name)
