@@ -24,7 +24,7 @@ def main(args):
     )
 
     log_dir = os.path.join(
-        "logs",
+        "log",
         f"{args.domain_name}-{args.task_name}",
         f'slac-seed{args.seed}-{datetime.now().strftime("%Y%m%d-%H%M")}',
     )
@@ -35,6 +35,7 @@ def main(args):
         action_repeat=args.action_repeat,
         device=torch.device("cuda" if args.cuda else "cpu"),
         seed=args.seed,
+        ckpt=args.ckpt
     )
     trainer = Trainer(
         env=env,
@@ -42,9 +43,7 @@ def main(args):
         algo=algo,
         log_dir=log_dir,
         seed=args.seed,
-        num_steps=2 * 10 ** 6,
-        initial_collection_steps=10 ** 4,
-        initial_learning_steps=10 ** 5,
+        pretrain=not bool(args.ckpt)
     )
     trainer.train()
     print('Finished')
@@ -57,6 +56,8 @@ if __name__ == "__main__":
     parser.add_argument("--task_name", type=str, default="run")
     parser.add_argument("--action_repeat", type=int, default=4)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--ckpt", type=str, default=None)
+
     parser.add_argument("--cuda", action="store_true")
     args = parser.parse_args()
     main(args)

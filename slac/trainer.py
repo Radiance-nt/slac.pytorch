@@ -23,7 +23,7 @@ class SlacObservation:
         self._state = deque(maxlen=self.num_sequences)
         self._action = deque(maxlen=self.num_sequences - 1)
         for _ in range(self.num_sequences - 1):
-            self._state.append(np.zeros(self.state_shape, dtype=np.uint8))
+            self._state.append(np.zeros(self.state_shape, dtype=np.float32))
             self._action.append(np.zeros(self.action_shape, dtype=np.float32))
         self._state.append(state)
 
@@ -58,6 +58,7 @@ class Trainer:
         num_sequences=8,
         eval_interval=10 ** 4,
         num_eval_episodes=5,
+        pretrain=True,
     ):
         # Env to collect samples.
         self.env = env
@@ -91,6 +92,7 @@ class Trainer:
         self.initial_learning_steps = initial_learning_steps
         self.eval_interval = eval_interval
         self.num_eval_episodes = num_eval_episodes
+        self.pretrain = pretrain
 
     def train(self):
         # Time to start training.
@@ -105,13 +107,13 @@ class Trainer:
         # Collect trajectories using random policy.
         for step in range(1, self.initial_collection_steps + 1):
             t = self.algo.step(self.env, self.ob, t, step <= self.initial_collection_steps)
-
-        # Update latent variable model first so that SLAC can learn well using (learned) latent dynamics.
-        bar = tqdm(range(self.initial_learning_steps))
-        for _ in bar:
-            bar.set_description("Updating latent variable model.")
-            self.algo.update_latent(self.writer)
-
+        if self.pretrain:
+            # Update latent variable model first so that SLAC can learn well using (learned) latent dynamics.
+            bar = tqdm(range(self.initial_learning_steps))
+            for _ in bar:
+                bar.set_description("Updating latent variable model.")
+                self.algo.update_latent(self.writer)
+            self.algo.save_model(os.path.join(self.model_dir, f"pretrain_latent"))
         # Iterate collection, update and evaluation.
         for step in range(self.initial_collection_steps + 1, self.num_steps // self.action_repeat + 1):
             t = self.algo.step(self.env, self.ob, t, False)

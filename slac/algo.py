@@ -35,6 +35,7 @@ class SlacAlgorithm:
         z2_dim=256,
         hidden_units=(256, 256),
         tau=5e-3,
+        ckpt=None
     ):
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -80,9 +81,11 @@ class SlacAlgorithm:
         fake_feature = torch.empty(1, num_sequences + 1, feature_dim, device=device)
         fake_action = torch.empty(1, num_sequences, action_shape[0], device=device)
         self.create_feature_actions = torch.jit.trace(create_feature_actions, (fake_feature, fake_action))
+        if ckpt:
+            self.load_model(ckpt)
 
     def preprocess(self, ob):
-        state = torch.tensor(ob.state, dtype=torch.uint8, device=self.device).float().div_(255.0)
+        state = torch.tensor(ob.state, dtype=torch.float, device=self.device).float()
         with torch.no_grad():
             feature = self.latent.encoder(state).view(1, -1)
         action = torch.tensor(ob.action, dtype=torch.float, device=self.device)
@@ -210,3 +213,11 @@ class SlacAlgorithm:
         torch.save(self.latent.state_dict(), os.path.join(save_dir, "latent.pth"))
         torch.save(self.actor.state_dict(), os.path.join(save_dir, "actor.pth"))
         torch.save(self.critic.state_dict(), os.path.join(save_dir, "critic.pth"))
+
+    def load_model(self, save_dir):
+        # We don't save target network to reduce workloads.
+        self.latent.encoder.load_state_dict(torch.load(os.path.join(save_dir, "encoder.pth")))
+        self.latent.load_state_dict(torch.load(os.path.join(save_dir, "latent.pth")))
+        self.actor.load_state_dict(torch.load(os.path.join(save_dir, "actor.pth")))
+        self.critic.load_state_dict(torch.load(os.path.join(save_dir, "critic.pth")))
+

@@ -125,10 +125,10 @@ class ReplayBuffer:
         Sample trajectories for updating latent variable model.
         """
         idxes = np.random.randint(low=0, high=self._n, size=batch_size)
-        state_ = np.empty((batch_size, self.num_sequences + 1, *self.state_shape), dtype=np.uint8)
+        state_ = np.empty((batch_size, self.num_sequences + 1, *self.state_shape),)
         for i, idx in enumerate(idxes):
             state_[i, ...] = self.state_[idx]
-        state_ = torch.tensor(state_, dtype=torch.uint8, device=self.device).float().div_(255.0)
+        state_ = torch.tensor(state_, dtype=torch.float, device=self.device).float()
         return state_, self.action_[idxes], self.reward_[idxes], self.done_[idxes]
 
     def sample_sac(self, batch_size):
@@ -136,10 +136,10 @@ class ReplayBuffer:
         Sample trajectories for updating SAC.
         """
         idxes = np.random.randint(low=0, high=self._n, size=batch_size)
-        state_ = np.empty((batch_size, self.num_sequences + 1, *self.state_shape), dtype=np.uint8)
+        state_ = np.empty((batch_size, self.num_sequences + 1, *self.state_shape))
         for i, idx in enumerate(idxes):
             state_[i, ...] = self.state_[idx]
-        state_ = torch.tensor(state_, dtype=torch.uint8, device=self.device).float().div_(255.0)
+        state_ = torch.tensor(state_, dtype=torch.float, device=self.device).float()
         return state_, self.action_[idxes], self.reward_[idxes, -1], self.done_[idxes, -1]
 
     def __len__(self):
