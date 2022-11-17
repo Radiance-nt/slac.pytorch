@@ -5,23 +5,12 @@ from datetime import datetime
 import torch
 
 from slac.algo import SlacAlgorithm
-from slac.env import make_dmc
+from slac.env import get_env
 from slac.trainer import Trainer
 
 
 def main(args):
-    env = make_dmc(
-        domain_name=args.domain_name,
-        task_name=args.task_name,
-        action_repeat=args.action_repeat,
-        image_size=64,
-    )
-    env_test = make_dmc(
-        domain_name=args.domain_name,
-        task_name=args.task_name,
-        action_repeat=args.action_repeat,
-        image_size=64,
-    )
+    env, env_test = get_env(args)
 
     log_dir = os.path.join(
         "log",
