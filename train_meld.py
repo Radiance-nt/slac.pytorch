@@ -4,7 +4,7 @@ from datetime import datetime
 
 import torch
 
-from slac.algo import SlacAlgorithm
+from slac.algo_meld import MeldAlgorithm
 from slac.env import get_env
 from slac.meld_trainer import MeldTrainer
 
@@ -18,7 +18,7 @@ def main(args):
         f'slac-seed{args.seed}-{datetime.now().strftime("%Y%m%d-%H%M")}',
     )
 
-    algo = SlacAlgorithm(
+    algo = MeldAlgorithm(
         state_shape=env.observation_space.shape,
         action_shape=env.action_space.shape,
         action_repeat=args.action_repeat,

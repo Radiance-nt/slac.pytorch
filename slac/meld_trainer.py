@@ -172,7 +172,10 @@ class MeldTrainer:
         # Initialize the environment.
         state = self.env.reset()
         self.ob.reset_episode(state)
-        self.algo.buffer.reset_episode(state)
+
+        self.algo.create_replaybuffer(num_train_tasks)
+        for task_idx in range(num_train_tasks):
+            self.algo.buffer[task_idx].reset_episode(state)
 
         train_tasks = self.env.init_tasks(num_tasks=num_train_tasks, is_eval_env=False)
         list_of_collect_task_idxs = np.random.choice(len(train_tasks), num_tasks_to_collect_per_iter,
@@ -182,14 +185,18 @@ class MeldTrainer:
         for task_idx in range(num_train_tasks):
             self.env.set_task_for_env(train_tasks[task_idx])
             for count in range(init_collect_trials_per_task):
-                t = self.algo.step(self.env, self.ob, t, True)
+                t = self.algo.step(self.env, self.ob, t, True, task_idx)
 
         if self.pretrain:
             # Update latent variable model first so that SLAC can learn well using (learned) latent dynamics.
-            bar = tqdm(range(init_model_train_steps))
+            bar = tqdm(range(int(init_model_train_steps / num_train_tasks)))
             for _ in bar:
                 bar.set_description("Updating latent variable model.")
-                self.algo.update_latent(self.writer)
+                # train model
+                self.algo.optim_latent.zero_grad()
+                for task_idx in range(num_train_tasks):
+                    self.algo.update_latent(self.writer, task_idx)
+                self.algo.optim_latent.step()
             self.algo.save_model(os.path.join(self.model_dir, f"pretrain_latent"))
 
 
@@ -199,7 +206,7 @@ class MeldTrainer:
                 self.env.set_task_for_env(train_tasks[task_idx])
 
                 # collect data with collect policy
-                t = self.algo.step(self.env, self.ob, t, False)
+                t = self.algo.step(self.env, self.ob, t, False, task_idx)
 
             ####################
             # train model
@@ -208,9 +215,12 @@ class MeldTrainer:
                     (iteration % model_train_freq == 0) and (t < stop_model_training)):
                 logging.info('\n\nPerforming %d steps of model training, each on %d random tasks',
                              model_train_steps_per_iter, num_tasks_per_train)
-                for model_iter in range(model_train_steps_per_iter):
+                for model_iter in range(int(model_train_steps_per_iter / num_train_tasks)):
                     # train model
-                    self.algo.update_latent(self.writer)
+                    self.algo.optim_latent.zero_grad()
+                    for task_idx in range(num_train_tasks):
+                        self.algo.update_latent(self.writer, task_idx)
+                    self.algo.optim_latent.step()
 
             ####################
             # train actor critic
