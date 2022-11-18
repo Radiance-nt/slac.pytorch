@@ -18,7 +18,12 @@ def get_env(args):
                                   seed=args.seed)
 
         return env, env_test
+    elif args.domain_name == "meld":
 
+        env = make_meld()
+        env_test = make_meld()
+
+        return env, env_test
     else:
         env = make_dmc(
             domain_name=args.domain_name,
@@ -57,6 +62,18 @@ def make_metaworld(domain_name, task_name,
             env = ALL_V2_ENVIRONMENTS_GOAL_HIDDEN[f"{task_name}-goal-hidden"](seed=seed)
     max_episode_steps = (episode_length + frame_skip - 1) // frame_skip
     env = StepLimitWarpper(env, max_episode_steps)
+    env = VisualizeWarpper(env)
+    env.action_repeat = 1
+    return env
+
+
+def make_meld():
+    from .envs.cheetah.cheetah_vel import HalfCheetahVelEnv
+
+    env = HalfCheetahVelEnv()
+    # register all gym envs
+    max_steps_dict = {"HalfCheetahVel-v0": 50, }
+    env = StepLimitWarpper(env, max_steps_dict["HalfCheetahVel-v0"])
     env = VisualizeWarpper(env)
     env.action_repeat = 1
     return env
@@ -135,7 +152,7 @@ class VisualizeWarpper(gym.Wrapper):
 
     def get_image(self):
         """comment /usr/lib/x86_64-linux-gnu/libGLEW.so"""
-        self.offscreen.render(self.image_size , self.image_size , camera_id=-1)
+        self.offscreen.render(self.image_size, self.image_size, camera_id=0)
         image = self.offscreen.read_pixels(self.image_size, self.image_size, depth=False)
 
         # image = self.env.render('rgb_array')
@@ -144,6 +161,8 @@ class VisualizeWarpper(gym.Wrapper):
 
         image = cv2.resize(image, (self.image_size, self.image_size))
         image = image.transpose(2, 0, 1)
+
         return image
+
     def __getattr__(self, name):
         return getattr(self.env, name)
