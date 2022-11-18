@@ -85,7 +85,7 @@ class SlacAlgorithm:
             self.load_model(ckpt)
 
     def preprocess(self, ob):
-        state = torch.tensor(ob.state, dtype=torch.float, device=self.device).float()
+        state = torch.tensor(ob.state, dtype=torch.uint8, device=self.device).float().div_(255.0)
         with torch.no_grad():
             feature = self.latent.encoder(state).view(1, -1)
         action = torch.tensor(ob.action, dtype=torch.float, device=self.device)

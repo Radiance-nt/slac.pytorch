@@ -61,20 +61,31 @@ class Decoder(torch.jit.ScriptModule):
         super(Decoder, self).__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(input_dim, output_dim),
-            nn.ReLU(inplace=True),
-            nn.Linear(output_dim, output_dim),
-            nn.ReLU(inplace=True),
+            # (32+256, 1, 1) -> (256, 4, 4)
+            nn.ConvTranspose2d(input_dim, 256, 4),
+            nn.LeakyReLU(0.2, inplace=True),
+            # (256, 4, 4) -> (128, 8, 8)
+            nn.ConvTranspose2d(256, 128, 3, 2, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            # (128, 8, 8) -> (64, 16, 16)
+            nn.ConvTranspose2d(128, 64, 3, 2, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            # (64, 16, 16) -> (32, 32, 32)
+            nn.ConvTranspose2d(64, 32, 3, 2, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            # (32, 32, 32) -> (3, 64, 64)
+            nn.ConvTranspose2d(32, output_dim, 5, 2, 2, 1),
+            nn.LeakyReLU(0.2, inplace=True),
         ).apply(initialize_weight)
         self.std = std
 
     @torch.jit.script_method
     def forward(self, x):
         B, S, latent_dim = x.size()
-        x = x.view(B * S, latent_dim)
+        x = x.view(B * S, latent_dim, 1, 1)
         x = self.net(x)
-        _, D = x.size()
-        x = x.view(B, S, D)
+        _, C, W, H = x.size()
+        x = x.view(B, S, C, W, H)
         return x, torch.ones_like(x).mul_(self.std)
 
 
@@ -87,16 +98,27 @@ class Encoder(torch.jit.ScriptModule):
         super(Encoder, self).__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(input_dim, output_dim),
-            nn.ReLU(inplace=True),
-            nn.Linear(output_dim, output_dim),
-            nn.ReLU(inplace=True),
+            # (3, 64, 64) -> (32, 32, 32)
+            nn.Conv2d(input_dim, 32, 5, 2, 2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # (32, 32, 32) -> (64, 16, 16)
+            nn.Conv2d(32, 64, 3, 2, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            # (64, 16, 16) -> (128, 8, 8)
+            nn.Conv2d(64, 128, 3, 2, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            # (128, 8, 8) -> (256, 4, 4)
+            nn.Conv2d(128, 256, 3, 2, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            # (256, 4, 4) -> (256, 1, 1)
+            nn.Conv2d(256, output_dim, 4),
+            nn.LeakyReLU(0.2, inplace=True),
         ).apply(initialize_weight)
 
     @torch.jit.script_method
     def forward(self, x):
-        B, S, D = x.size()
-        x = x.view(B * S, D)
+        B, S, C, H, W = x.size()
+        x = x.view(B * S, C, H, W)
         x = self.net(x)
         x = x.view(B, S, -1)
         return x

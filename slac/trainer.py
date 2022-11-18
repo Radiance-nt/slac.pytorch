@@ -23,7 +23,7 @@ class SlacObservation:
         self._state = deque(maxlen=self.num_sequences)
         self._action = deque(maxlen=self.num_sequences - 1)
         for _ in range(self.num_sequences - 1):
-            self._state.append(np.zeros(self.state_shape, dtype=np.float32))
+            self._state.append(np.zeros(self.state_shape, dtype=np.uint8))
             self._action.append(np.zeros(self.action_shape, dtype=np.float32))
         self._state.append(state)
 
@@ -133,6 +133,7 @@ class Trainer:
 
     def evaluate(self, step_env):
         mean_return = 0.0
+        mean_success = 0.0
 
         for i in range(self.num_eval_episodes):
             state = self.env_test.reset()
@@ -142,11 +143,12 @@ class Trainer:
 
             while not done:
                 action = self.algo.exploit(self.ob_test)
-                state, reward, done, _ = self.env_test.step(action)
+                state, reward, done, info = self.env_test.step(action)
                 self.ob_test.append(state, action)
                 episode_return += reward
 
             mean_return += episode_return / self.num_eval_episodes
+            mean_success += (info.get('success') or 0) / self.num_eval_episodes
 
         # Log to CSV.
         self.log["step"].append(step_env)
@@ -155,6 +157,7 @@ class Trainer:
 
         # Log to TensorBoard.
         self.writer.add_scalar("return/test", mean_return, step_env)
+        self.writer.add_scalar("success/test", mean_success, step_env)
         print(f"Steps: {step_env:<6}   " f"Return: {mean_return:<5.1f}   " f"Time: {self.time}")
 
     @property
